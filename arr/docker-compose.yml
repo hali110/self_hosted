@@ -1,0 +1,91 @@
+services:
+  jellyfin:
+    image: jellyfin/jellyfin
+    container_name: jellyfin
+    volumes:
+      - ./config/jellyfin:/config
+      - ./cache/jellyfin:/cache
+      - type: bind
+        source: /main_pool/documents/media/
+        target: /media
+        read_only: true
+      - ./config/jellyfin/web-config.json:/jellyfin/jellyfin-web/config.json
+    restart: 'unless-stopped'
+    ports:
+      - 8096:8096
+    networks:
+      - arr_network
+
+#   jellyseerr:
+#     image: fallenbagel/jellyseerr:latest
+#     container_name: jellyseerr
+#     environment:
+#       - LOG_LEVEL=debug
+#       - TZ=America/Chicago
+#     volumes:
+#       - ./config/jellyseerr:/app/config
+#     restart: unless-stopped
+#     ports:
+#       - 5055:5055
+#     networks:
+#       - arr_network
+
+networks:
+  arr_network:
+    driver: bridge
+    name: arr_network
+    ipam:
+      config:
+        - subnet: 172.22.0.0/24
+
+#   radarr:
+#     image: lscr.io/linuxserver/radarr:latest
+#     container_name: radarr
+#     network_mode: 'host'
+#     volumes:
+#       - ./config/radarr:/config
+#       - /main_pool/media:/media
+#     environment:
+#       - TZ=America/Chicago
+#     ports:
+#       - 7878:7878
+#     restart: unless-stopped
+# 
+#   sonarr:
+#     image: lscr.io/linuxserver/sonarr:latest
+#     container_name: sonarr
+#     network_mode: 'host'
+#     volumes:
+#       - ./config/sonarr:/config
+#       - /main_pool/media:/media
+#     environment:
+#       - TZ=America/Chicago
+#     ports:
+#       - 8989:8989
+#     restart: unless-stopped
+# 
+#   bazarr:
+#     image: lscr.io/linuxserver/bazarr:latest
+#     container_name: bazarr
+#     network_mode: 'host'
+#     volumes:
+#       - ./config/bazarr:/config
+#       - /main_pool/media:/media
+#     environment:
+#       - TZ=America/Chicago
+#     ports:
+#       - 6767:6767
+#     restart: unless-stopped
+# 
+#   deluge:
+#     image: lscr.io/linuxserver/deluge:latest
+#     container_name: deluge
+#     network_mode: "host"
+#     volumes:
+#       - /main_pool/media/downloads:/downloads
+#       - ./config/deluge:/config
+#     restart: unless-stopped
+#     ports:
+#       - 8112:8112
+#       - 6881:6881
+#       - 6881:6881/udp

@@ -1,0 +1,79 @@
+services:
+  pihole:
+    depends_on: [unbound]
+    container_name: pihole
+    image: pihole/pihole
+    hostname: pihole
+    network_mode: host  # Use host networking
+    environment:
+      - WEBPASSWORD=${WEBPASSWORD}
+      - BLOCK_ICLOUD_PR=false
+      - DNSMASQ_USER=root
+      - DNS1=127.0.0.1#5335
+      - DNS2=127.0.0.1#5335
+    env_file:
+      - .env
+    volumes:
+      - './config/pihole/etc-pihole:/etc/pihole'
+      - './config/pihole/etc-dnsmasq.d:/etc/dnsmasq.d'
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+
+  unbound:
+    image: mvance/unbound
+    container_name: unbound
+    hostname: "unbound"
+    network_mode: host  # Use host networking
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./config/unbound:/opt/unbound/etc/unbound
+    restart: unless-stopped
+
+  wireguard:
+    depends_on: [unbound, pihole]
+    image: linuxserver/wireguard
+    container_name: wireguard
+    network_mode: host  # Use host networking
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - WIREGUARD_SERVER_PORT=51821
+      - PUID=1000
+      - PGID=1000
+      - PEERDNS=10.3.13.1
+      - ALLOWEDIPS=0.0.0.0/0
+      - TZ="America/Chicago"
+    dns:
+      - 127.0.0.1
+    volumes:
+      - ./config/wireguard/config:/config
+      - /lib/modules:/lib/modules
+    restart: unless-stopped
+
+  wireguard-ui:
+    image: ngoduykhanh/wireguard-ui
+    container_name: wireguard-ui
+    depends_on: [unbound, wireguard]
+    cap_add:
+      - NET_ADMIN
+    network_mode: service:wireguard  # WireGuard UI uses the WireGuard service's network
+    logging:
+      driver: json-file
+      options:
+        max-size: 50m
+    volumes:
+      - ./config/wireguard/ui_db:/app/db
+      - ./config/wireguard/config/wg_confs:/etc/wireguard
+    environment:
+      - WGUI_SESSION_SECRET=longlive # Set a secure session secret
+      - WGUI_USERNAME=admin
+      - WGUI_PASSWORD=${WEBPASSWORD}
+      - WGUI_MANAGE_START=false
+      - WGUI_MANAGE_RESTART=false
+      - TZ="America/Chicago"
+    env_file:
+      - .env
+    restart: unless-stopped

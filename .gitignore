@@ -1,0 +1,11 @@
+algo
+data
+cache
+config
+postgres
+storage
+scraper
+influxdb
+uptime_kuma
+.env
+authorized_keys
